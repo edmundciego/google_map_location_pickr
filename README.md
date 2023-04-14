@@ -1,16 +1,42 @@
-# google_map_location_picker
+Google Map Location Picker
+This is a Flutter plugin that provides a widget for selecting a location on Google Maps.
 
-A new Flutter project.
+Installation
+To use this plugin, add google_map_location_picker as a dependency in your pubspec.yaml file.
 
-## Getting Started
+Usage
+Import package:google_map_location_picker/google_map_location_picker.dart, and use the GoogleMapLocationPicker widget.
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/developing-packages/),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
+import 'package:flutter/material.dart';
+import 'package:google_map_location_picker/google_map_location_picker.dart';
 
-For help getting started with Flutter development, view the
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Google Map Location Picker Demo',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('Google Map Location Picker Demo'),
+        ),
+        body: Center(
+          child: GoogleMapLocationPicker(
+            apiKey: 'YOUR_API_KEY',
+            initialLocation: LatLng(37.4221, -122.0841),
+            onLocationPicked: (LatLng latLng) {
+              print('Location picked: $latLng');
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+API Key
+This plugin requires a Google Maps API key to be set in the AndroidManifest.xml file. You can obtain an API key by following the instructions on the Google Maps Platform documentation.
 
-# google_map_location_picker-main
+License
+This plugin is released under the MIT License.

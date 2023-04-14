@@ -19,6 +19,57 @@ import 'model/location_result.dart';
 import 'model/nearby_place.dart';
 import 'utils/location_utils.dart';
 
+// class LocationPicker extends StatefulWidget {
+//   LocationPicker(
+//     this.apiKey, {
+//     Key key,
+//     this.initialCenter,
+//     this.initialZoom,
+//     this.requiredGPS,
+//     this.myLocationButtonEnabled,
+//     this.layersButtonEnabled,
+//     this.automaticallyAnimateToCurrentLocation,
+//     this.mapStylePath,
+//     this.appBarColor,
+//     this.searchBarBoxDecoration,
+//     this.hintText,
+//     this.resultCardConfirmIcon,
+//     this.resultCardAlignment,
+//     this.resultCardDecoration,
+//     this.resultCardPadding,
+//     this.countries,
+//     this.language,
+//     this.desiredAccuracy,
+//   });
+
+//   final String apiKey;
+
+//   final LatLng initialCenter;
+//   final double initialZoom;
+//   final List<String> countries;
+
+//   final bool requiredGPS;
+//   final bool myLocationButtonEnabled;
+//   final bool layersButtonEnabled;
+//   final bool automaticallyAnimateToCurrentLocation;
+
+//   final String mapStylePath;
+
+//   final Color appBarColor;
+//   final BoxDecoration searchBarBoxDecoration;
+//   final String hintText;
+//   final Widget resultCardConfirmIcon;
+//   final Alignment resultCardAlignment;
+//   final Decoration resultCardDecoration;
+//   final EdgeInsets resultCardPadding;
+
+//   final String language;
+
+//   final LocationAccuracy desiredAccuracy;
+
+//   @override
+//   LocationPickerState createState() => LocationPickerState();
+// }
 class LocationPicker extends StatefulWidget {
   LocationPicker(
     this.apiKey, {
