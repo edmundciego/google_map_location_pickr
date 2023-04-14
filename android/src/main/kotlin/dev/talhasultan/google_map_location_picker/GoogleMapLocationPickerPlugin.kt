@@ -12,6 +12,7 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import android.content.pm.PackageManager
 import java.math.BigInteger
 import java.security.MessageDigest
+import org.json.JSONObject
 import android.content.pm.PackageInfo
 
 class GoogleMapLocationPickerPlugin : FlutterPlugin, MethodCallHandler, ActivityAware  {

@@ -6,8 +6,7 @@ To use this plugin, add google_map_location_picker as a dependency in your pubsp
 
 Usage
 Import package:google_map_location_picker/google_map_location_picker.dart, and use the GoogleMapLocationPicker widget.
-
-import 'package:flutter/material.dart';
+    import 'package:flutter/material.dart';
 import 'package:google_map_location_picker/google_map_location_picker.dart';
 
 class MyApp extends StatelessWidget {
@@ -35,6 +34,8 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+
 API Key
 This plugin requires a Google Maps API key to be set in the AndroidManifest.xml file. You can obtain an API key by following the instructions on the Google Maps Platform documentation.
 
