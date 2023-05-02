@@ -124,15 +124,43 @@ class MapPickerState extends State<MapPicker> {
   @override
   void initState() {
     super.initState();
-    if (widget.automaticallyAnimateToCurrentLocation && !widget.requiredGPS)
-      _initCurrentLocation();
+    if (widget.automaticallyAnimateToCurrentLocation! && !widget.requiredGPS!) {
+      _checkGeolocationPermission().then((granted) {
+        if (granted) {
+          _initCurrentLocation();
+        } else {
+          // show a dialog or snackbar to inform the user that location permission is required
+        }
+      });
+    }
 
     if (widget.mapStylePath != null) {
-      rootBundle.loadString(widget.mapStylePath).then((string) {
+      rootBundle.loadString(widget.mapStylePath!).then((string) {
         _mapStyle = string;
       });
     }
   }
+
+  Future<bool> _checkGeolocationPermission() async {
+    final status = await Geolocator.checkPermission();
+    if (status == LocationPermission.denied) {
+      final result = await Geolocator.requestPermission();
+      if (result == LocationPermission.deniedForever) {
+        // show a dialog or snackbar to inform the user that location permission is required
+        return false;
+      }
+      if (result == LocationPermission.denied) {
+        // show a dialog or snackbar to inform the user that location permission is required
+        return false;
+      }
+    }
+    if (status == LocationPermission.deniedForever) {
+      // show a dialog or snackbar to inform the user that location permission is required
+      return false;
+    }
+    return true;
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -376,26 +404,6 @@ class MapPickerState extends State<MapPicker> {
   }
 
   var dialogOpen;
-
-  Future _checkGeolocationPermission() async {
-    final geolocationStatus = await Geolocator.checkPermission();
-    d("geolocationStatus = $geolocationStatus");
-
-    if (geolocationStatus == LocationPermission.denied && dialogOpen == null) {
-      dialogOpen = _showDeniedDialog();
-    } else if (geolocationStatus == LocationPermission.deniedForever &&
-        dialogOpen == null) {
-      dialogOpen = _showDeniedForeverDialog();
-    } else if (geolocationStatus == LocationPermission.whileInUse ||
-        geolocationStatus == LocationPermission.always) {
-      d('GeolocationStatus.granted');
-
-      if (dialogOpen != null) {
-        Navigator.of(context, rootNavigator: true).pop();
-        dialogOpen = null;
-      }
-    }
-  }
 
   Future _showDeniedDialog() {
     return showDialog(
