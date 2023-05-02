@@ -1,7 +1,16 @@
 package dev.talhasultan.google_map_location_picker
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationManager
 import androidx.annotation.NonNull
-
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.tasks.OnSuccessListener
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -9,15 +18,14 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
-import android.content.pm.PackageManager
+import org.json.JSONObject
 import java.math.BigInteger
 import java.security.MessageDigest
-import org.json.JSONObject
-import android.content.pm.PackageInfo
 
-class GoogleMapLocationPickerPlugin : FlutterPlugin, MethodCallHandler, ActivityAware  {
-    private lateinit var channel : MethodChannel
+class GoogleMapLocationPickerPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
+    private lateinit var channel: MethodChannel
     private var activityBinding: ActivityPluginBinding? = null
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "google_map_location_picker")
@@ -25,84 +33,66 @@ class GoogleMapLocationPickerPlugin : FlutterPlugin, MethodCallHandler, Activity
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
-    if(activityBinding == null) {
-        result.notImplemented()
-        return
-    }
-    if (call.method == "getSigningCertSha1") {
-        try {
-            //.orEmpty() added on 14/05/22 by mg to call.arguments<String>().orEmpty()
-            val info: PackageInfo = activityBinding!!.activity.packageManager.getPackageInfo(call.arguments<String>().orEmpty(), PackageManager.GET_SIGNATURES)
-            for (signature in info.signatures) {
-                val md: MessageDigest = MessageDigest.getInstance("SHA1")
-                md.update(signature.toByteArray())
+        if(activityBinding == null) {
+            result.notImplemented()
+            return
+        }
+        if (call.method == "getSigningCertSha1") {
+            try {
+                val info = activityBinding!!.activity.packageManager.getPackageInfo(call.arguments<String>().orEmpty(), PackageManager.GET_SIGNATURES)
+                for (signature in info.signatures) {
+                    val md: MessageDigest = MessageDigest.getInstance("SHA1")
+                    md.update(signature.toByteArray())
 
-                val bytes: ByteArray = md.digest()
-                val bigInteger = BigInteger(1, bytes)
-                val hex: String = String.format("%0" + (bytes.size shl 1) + "x", bigInteger)
+                    val bytes: ByteArray = md.digest()
+                    val bigInteger = BigInteger(1, bytes)
+                    val hex: String = String.format("%0" + (bytes.size shl 1) + "x", bigInteger)
 
-                result.success(hex)
+                    result.success(hex)
+                }
+            } catch (e: Exception) {
+                result.error("ERROR", e.toString(), null)
             }
-        } catch (e: Exception) {
-            result.error("ERROR", e.toString(), null)
-        }
-    } else if (call.method == "getCurrentLocation") {
-        if (ContextCompat.checkSelfPermission(activityBinding!!.activity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            getCurrentLocation(result)
-        } else {
-            ActivityCompat.requestPermissions(activityBinding!!.activity, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
-        }
-    } else if (call.method == "onRequestPermissionsResult") {
-        if (call.argument<Int>("requestCode") == LOCATION_PERMISSION_REQUEST_CODE) {
-            if (call.argument<Int>("grantResults")?.get(0) == PackageManager.PERMISSION_GRANTED) {
+        } else if (call.method == "getCurrentLocation") {
+            if (ContextCompat.checkSelfPermission(activityBinding!!.activity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 getCurrentLocation(result)
             } else {
-                result.error("ERROR", "Location permission denied", null)
+                ActivityCompat.requestPermissions(activityBinding!!.activity, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
             }
-        }
-    } else {
-        result.notImplemented()
-    }
-}
-
-private fun getCurrentLocation(result: Result) {
-    try {
-        val locationManager = activityBinding!!.activity.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-        val isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-
-        if (!isGpsEnabled && !isNetworkEnabled) {
-            result.error("ERROR", "Location services disabled", null)
+        } else if (call.method == "onRequestPermissionsResult") {
+            if (call.argument<Int>("requestCode") == LOCATION_PERMISSION_REQUEST_CODE) {
+                if (call.argument<Int>("grantResults")?.get(0) == PackageManager.PERMISSION_GRANTED) {
+                    getCurrentLocation(result)
+                } else {
+                    result.error("ERROR", "Location permission denied", null)
+                }
+            }
         } else {
-            var location: Location? = null
-
-            if (isGpsEnabled) {
-                location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-            }
-
-            if (location == null && isNetworkEnabled) {
-                location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-            }
-
-            if (location != null) {
-                result.success(getLocationJson(location))
-            } else {
-                result.error("ERROR", "Unable to get current location", null)
-            }
+            result.notImplemented()
         }
-    } catch (e: Exception) {
-        result.error("ERROR", e.toString(), null)
     }
-}
 
-private fun getLocationJson(location: Location): String {
-    val jsonObject = JSONObject()
+    private fun getCurrentLocation(result: Result) {
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(activityBinding!!.activity)
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener(OnSuccessListener<Location> { location ->
+                if (location != null) {
+                    result.success(getLocationJson(location))
+                } else {
+                    result.error("ERROR", "Unable to get current location", null)
+                }
+            })
+    }
 
-    jsonObject.put("latitude", location.latitude)
-    jsonObject.put("longitude", location.longitude)
 
-    return jsonObject.toString()
-}
+    private fun getLocationJson(location: Location): String {
+        val jsonObject = JSONObject()
+
+        jsonObject.put("latitude", location.latitude)
+        jsonObject.put("longitude", location.longitude)
+
+        return jsonObject.toString()
+    }
 
 
     override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
